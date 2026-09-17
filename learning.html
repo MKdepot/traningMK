@@ -24,6 +24,18 @@ body{margin:0;background:var(--bg);color:var(--ink);
 /* แผ่นใสคลุมวิดีโอ กันแตะโดนตัวเลื่อนเวลาของ YouTube */
 .shield{position:absolute;inset:0;z-index:5}
 
+/* ปุ่มเต็มจอ ลอยอยู่มุมขวาล่างของวิดีโอ */
+.fsbtn{position:absolute;right:12px;bottom:12px;z-index:6;
+  width:56px;height:56px;border:none;border-radius:12px;
+  background:rgba(0,0,0,.55);color:#fff;font-size:26px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fsbtn:active{background:rgba(0,0,0,.8)}
+
+/* โหมดเต็มจอ (ใช้ทั้ง Fullscreen API และ CSS สำรองสำหรับ iPhone) */
+.stage.fs{position:fixed;inset:0;width:100vw;height:100vh;
+  aspect-ratio:auto;z-index:9999}
+.stage:fullscreen{width:100vw;height:100vh;aspect-ratio:auto}
+
 .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;
   box-shadow:0 2px 12px rgba(0,0,0,.07)}
 .vtitle{font-size:22px;font-weight:700;margin-bottom:4px}
@@ -73,9 +85,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 <div id="app" class="hide">
   <div class="head"><h1>วิดีโออบรมความปลอดภัย</h1></div>
 
-  <div class="stage">
+  <div class="stage" id="stage">
     <div id="player"></div>
     <div class="shield"></div>
+    <button class="fsbtn" id="btnFs" title="เต็มจอ">⛶</button>
   </div>
 
   <div class="wrap">
@@ -117,7 +130,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ===== ตั้งค่าให้ตรงกับ index.html =====
 const SUPABASE_URL  = "https://eldfrrdxsqvuhduhquth.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsZGZycmR4c3F2dWhkdWhxdXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDQ2OTEsImV4cCI6MjEwNTE4MDY5MX0.deIQONNK7B4RperTBvgnILVaETeAD23IZlpHlGnEfUQ";
-// ======================================
+//  ======================================
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 const $ = id => document.getElementById(id);
@@ -200,7 +213,8 @@ window.onYouTubeIframeAPIReady = () => {
     events: {
       onReady: () => {
         // เริ่มต่อจากจุดที่ดูค้างไว้
-        if (cur.watched > 5 && !cur.completed) player.seekTo(cur.watched, true);
+        const resume = Math.max(cur.position || 0, cur.watched || 0);
+        if (resume > 5 && !cur.completed) player.seekTo(resume, true);
       },
       onStateChange: onState,
     },
@@ -224,6 +238,42 @@ $('btnPlay').addEventListener('click', () => {
   if (s === YT.PlayerState.PLAYING) player.pauseVideo();
   else player.playVideo();
 });
+
+// ---- ปุ่มเต็มจอ (รองรับ iPhone ที่ไม่มี Fullscreen API ด้วย) ----
+const stage = $('stage');
+
+function inFullscreen() {
+  return document.fullscreenElement || document.webkitFullscreenElement
+      || stage.classList.contains('fs');
+}
+
+$('btnFs').addEventListener('click', () => {
+  if (inFullscreen()) {
+    if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen();
+    else if (document.webkitExitFullscreen && document.webkitFullscreenElement) document.webkitExitFullscreen();
+    stage.classList.remove('fs');
+    $('btnFs').textContent = '⛶';
+  } else {
+    if (stage.requestFullscreen) {
+      stage.requestFullscreen().catch(() => stage.classList.add('fs'));
+    } else if (stage.webkitRequestFullscreen) {
+      stage.webkitRequestFullscreen();
+    } else {
+      stage.classList.add('fs');     // iPhone Safari
+    }
+    $('btnFs').textContent = '✕';
+  }
+});
+
+// กดปุ่ม ESC หรือปุ่มย้อนกลับบนมือถือแล้วออกจากเต็มจอ
+['fullscreenchange','webkitfullscreenchange'].forEach(ev =>
+  document.addEventListener(ev, () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      stage.classList.remove('fs');
+      $('btnFs').textContent = '⛶';
+    }
+  })
+);
 
 // ---- ส่งความคืบหน้าให้ server ตรวจทุก 5 วินาที ----
 function startBeat(){ stopBeat(); timer = setInterval(beat, 5000); }
