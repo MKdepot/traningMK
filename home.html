@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>หน้าหลัก — ระบบอบรมพนักงานขับรถ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00a94f; --green-dark:#00863f; --red:#e3242b; --amber:#f5a623;
+  --ink:#1a1a1a; --muted:#5c5c5c; --line:#d4d4d4; --bg:#f4f6f8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',sans-serif;font-size:20px;line-height:1.6;padding-bottom:40px}
+.wrap{max-width:520px;margin:0 auto;padding:20px}
+
+.top{background:var(--green);color:#fff;padding:24px 20px 28px;
+  border-radius:0 0 24px 24px;text-align:center}
+.top .hi{font-size:18px;opacity:.9}
+.top .name{font-size:26px;font-weight:700;margin-top:2px}
+.top .co{font-size:17px;opacity:.85;margin-top:2px}
+
+.card{background:#fff;border-radius:16px;padding:22px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:16px}
+
+/* ---- ขั้นตอน ---- */
+.step{display:flex;align-items:flex-start;gap:16px;padding:18px 0;
+  border-bottom:1px solid #eee}
+.step:last-child{border-bottom:none}
+.dot{flex:none;width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;background:#e6e6e6;color:#8a8a8a}
+.step.done .dot{background:var(--green);color:#fff}
+.step.now  .dot{background:var(--amber);color:#fff}
+.step-body{flex:1}
+.step-title{font-size:21px;font-weight:600}
+.step.done .step-title,.step.now .step-title{color:var(--ink)}
+.step:not(.done):not(.now) .step-title{color:#9a9a9a}
+.step-sub{font-size:17px;color:var(--muted);margin-top:2px}
+
+.btn{display:flex;align-items:center;justify-content:center;
+  width:100%;height:68px;border:none;border-radius:14px;
+  font-family:inherit;font-size:23px;font-weight:700;cursor:pointer;
+  background:var(--green);color:#fff;margin-top:8px;text-decoration:none}
+.btn:active{background:var(--green-dark)}
+.btn-ghost{background:#fff;color:var(--muted);border:2px solid var(--line);font-weight:600}
+
+.big{text-align:center;padding:10px 0}
+.big .label{font-size:18px;color:var(--muted)}
+.big .value{font-size:42px;font-weight:700;line-height:1.2}
+.row{display:flex;gap:12px}
+.row>div{flex:1;background:#fff;border-radius:16px;padding:18px 10px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07)}
+
+.banner{border-radius:16px;padding:20px;margin-bottom:16px;font-size:19px}
+.banner.ok{background:#e8f6ee;color:#00632f;border:1px solid #a9ddc0}
+.banner.warn{background:#fff6e5;color:#8a5a00;border:1px solid #f0d8a5}
+.banner.bad{background:#ffeceb;color:#a3161c;border:1px solid #f5b5b3}
+.banner b{display:block;font-size:22px;margin-bottom:4px}
+
+.center{text-align:center;padding:60px 20px;color:var(--muted)}
+.spin{display:inline-block;width:36px;height:36px;border:4px solid #ddd;
+  border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="loading" class="center"><div class="spin"></div><p>กำลังโหลด...</p></div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <div class="hi">สวัสดี</div>
+    <div class="name" id="dName">-</div>
+    <div class="co"  id="dRound"></div>
+  </div>
+
+  <div class="wrap">
+    <div id="banner"></div>
+
+    <div class="row" style="margin-bottom:16px">
+      <div class="big">
+        <div class="label">สอบก่อนอบรม</div>
+        <div class="value" id="preScore">-</div>
+      </div>
+      <div class="big">
+        <div class="label">สอบหลังอบรม</div>
+        <div class="value" id="postScore">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="steps"></div>
+      <div id="action"></div>
+    </div>
+
+    <button class="btn btn-ghost" id="btnOut">ออกจากระบบ</button>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ===== ตั้งค่าให้ตรงกับ index.html =====
+const SUPABASE_URL  = "https://xxxxxxxxxxxx.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOi...";
+// ======================================
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const $ = id => document.getElementById(id);
+
+const { data: { session } } = await sb.auth.getSession();
+if (!session) location.replace("index.html");
+
+const { data: p, error } = await sb.rpc("my_progress");
+if (error) { alert("โหลดข้อมูลไม่สำเร็จ: " + error.message); location.replace("index.html"); }
+
+$('loading').style.display = 'none';
+$('app').style.display = 'block';
+
+$('dName').textContent  = p.name;
+$('dRound').textContent = p.round > 1 ? `การอบรมรอบที่ ${p.round}` : '';
+$('preScore').textContent  = p.pre_score  != null ? Math.round(p.pre_score)  + '%' : '-';
+$('postScore').textContent = p.post_score != null ? Math.round(p.post_score) + '%' : '-';
+
+// ---- คำนวณว่าอยู่ขั้นไหน ----
+const videosDone = p.videos.length > 0 && p.videos.every(v => v.completed);
+const watched    = p.videos.reduce((a,v) => a + v.watched, 0);
+const total      = p.videos.reduce((a,v) => a + v.duration, 0);
+const pct        = total ? Math.round(watched * 100 / total) : 0;
+
+const steps = [
+  { title:"ลงทะเบียน",        sub:"เรียบร้อยแล้ว",                       done:true },
+  { title:"สอบก่อนอบรม",       sub:p.pre_done ? "ทำแล้ว" : "ยังไม่ได้ทำ",  done:p.pre_done },
+  { title:"ดูวิดีโออบรม",      sub:videosDone ? "ดูครบแล้ว" : `ดูไปแล้ว ${pct}%`, done:videosDone },
+  { title:"สอบหลังอบรม",       sub:p.post_passed === true ? "ผ่าน"
+                                : p.post_score != null ? "ยังไม่ผ่าน" : "ยังไม่ได้ทำ",
+                              done:p.post_passed === true },
+  { title:"ส่งเอกสาร",         sub:["docs_submitted","approved","card_issued"].includes(p.status)
+                                ? "ส่งแล้ว" : "รอสอบผ่านก่อน",
+                              done:["docs_submitted","approved","card_issued"].includes(p.status) },
+  { title:"รับบัตรเข้าคลัง",   sub:p.card ? `หมดอายุ ${new Date(p.card.expiry).toLocaleDateString('th-TH')}` : "รอตรวจเอกสาร",
+                              done:!!p.card },
+];
+
+const nowIdx = steps.findIndex(s => !s.done);
+$('steps').innerHTML = steps.map((s,i) => `
+  <div class="step ${s.done ? 'done' : i === nowIdx ? 'now' : ''}">
+    <div class="dot">${s.done ? '✓' : i+1}</div>
+    <div class="step-body">
+      <div class="step-title">${s.title}</div>
+      <div class="step-sub">${s.sub}</div>
+    </div>
+  </div>`).join('');
+
+// ---- ปุ่มถัดไป + ข้อความบอกสถานะ ----
+let banner = '', action = '';
+
+if (!p.pre_done) {
+  banner = `<div class="banner warn"><b>ขั้นตอนถัดไป</b>ทำแบบทดสอบก่อนอบรม</div>`;
+  action = `<a class="btn" href="exam.html?type=pre">เริ่มทำข้อสอบก่อนอบรม</a>`;
+
+} else if (!videosDone) {
+  banner = `<div class="banner warn"><b>ขั้นตอนถัดไป</b>ดูวิดีโออบรมให้ครบ (ดูไปแล้ว ${pct}%)</div>`;
+  action = `<a class="btn" href="learning.html">ดูวิดีโออบรม</a>`;
+
+} else if (p.post_passed !== true) {
+  const failed = p.post_score != null;
+  banner = failed
+    ? `<div class="banner bad"><b>ยังไม่ผ่าน</b>ได้ ${Math.round(p.post_score)}% ต้องได้ 80% ขึ้นไป กรุณาดูวิดีโออีกครั้งแล้วสอบใหม่</div>`
+    : `<div class="banner warn"><b>ขั้นตอนถัดไป</b>ทำแบบทดสอบหลังอบรม</div>`;
+  action = `<a class="btn" href="exam.html?type=post">${failed ? 'สอบใหม่' : 'เริ่มทำข้อสอบหลังอบรม'}</a>`;
+
+} else if (!["docs_submitted","approved","card_issued"].includes(p.status)) {
+  banner = `<div class="banner ok"><b>สอบผ่านแล้ว</b>ขั้นต่อไปคือส่งรูปถ่ายและเอกสาร</div>`;
+  action = `<a class="btn" href="documents.html">ส่งเอกสาร</a>`;
+
+} else if (p.status === "docs_rejected") {
+  banner = `<div class="banner bad"><b>เอกสารถูกตีกลับ</b>กรุณาส่งเอกสารใหม่</div>`;
+  action = `<a class="btn" href="documents.html">แก้ไขเอกสาร</a>`;
+
+} else if (!p.card) {
+  banner = `<div class="banner warn"><b>รอเจ้าหน้าที่ตรวจเอกสาร</b>เมื่อตรวจเสร็จท่านจะได้รับบัตร</div>`;
+
+} else {
+  banner = `<div class="banner ok"><b>ได้รับบัตรแล้ว</b>เลขที่ ${p.card.number}</div>`;
+  action = `<a class="btn" href="my_card.html">แสดงบัตรของฉัน</a>`;
+}
+
+$('banner').innerHTML = banner;
+$('action').innerHTML = action;
+
+$('btnOut').addEventListener('click', async () => {
+  if (!confirm("ต้องการออกจากระบบใช่หรือไม่")) return;
+  await sb.auth.signOut();
+  location.replace("index.html");
+});
+</script>
+</body>
+</html>

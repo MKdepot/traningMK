@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ระบบอบรมพนักงานขับรถ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===================================================================
+   ออกแบบสำหรับผู้ใช้สูงอายุ:
+   - ตัวหนังสือใหญ่กว่าปกติ ~1.5 เท่า
+   - ปุ่มสูง 64px เต็มความกว้าง กดพลาดยาก
+   - หนึ่งหน้าจอ ทำอย่างเดียว ไม่มีเมนู
+   - สีตัดกันชัด อ่านกลางแดดได้
+   =================================================================== */
+:root{
+  --green:#00a94f; --green-dark:#00863f; --red:#e3242b;
+  --ink:#1a1a1a; --muted:#5c5c5c; --line:#d4d4d4; --bg:#f4f6f8;
+  --radius:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',sans-serif;font-size:20px;line-height:1.6;
+  padding:0 0 40px;
+}
+.wrap{max-width:520px;margin:0 auto;padding:20px}
+.brand{text-align:center;padding:28px 0 20px}
+.brand img{height:72px}
+.brand h1{font-size:24px;margin:14px 0 0;font-weight:700}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:18px}
+
+.card{background:#fff;border-radius:var(--radius);padding:26px 22px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:18px}
+
+label{display:block;font-weight:600;font-size:20px;margin-bottom:10px}
+.hint{color:var(--muted);font-size:17px;font-weight:400;margin:-4px 0 12px}
+
+input[type=text],input[type=tel]{
+  width:100%;height:68px;font-size:28px;font-family:inherit;
+  text-align:center;letter-spacing:2px;
+  border:2px solid var(--line);border-radius:14px;background:#fff;
+  padding:0 12px;margin-bottom:18px;
+}
+input:focus{outline:none;border-color:var(--green);
+  box-shadow:0 0 0 4px rgba(0,169,79,.15)}
+input.name-field{text-align:right;letter-spacing:0;font-size:22px}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:68px;border:none;border-radius:14px;
+  font-family:inherit;font-size:23px;font-weight:700;cursor:pointer;
+  background:var(--green);color:#fff;margin-bottom:12px;
+}
+.btn:active{background:var(--green-dark)}
+.btn:disabled{background:#b5b5b5}
+.btn-ghost{background:#fff;color:var(--muted);border:2px solid var(--line);font-weight:600}
+.btn-ghost:active{background:#eee}
+
+.pick{
+  width:100%;text-align:right;background:#fff;border:2px solid var(--line);
+  border-radius:14px;padding:20px;font-size:22px;font-family:inherit;
+  font-weight:600;margin-bottom:12px;cursor:pointer;
+}
+.pick:active{border-color:var(--green);background:#f0fff6}
+
+.msg{border-radius:12px;padding:16px 18px;font-size:19px;margin-bottom:16px;display:none}
+.msg.error{display:block;background:#ffeceb;color:#a3161c;border:1px solid #f5b5b3}
+.msg.info{display:block;background:#e8f6ee;color:#00632f;border:1px solid #a9ddc0}
+
+.consent{background:#fffbe9;border:1px solid #f0ddaa;border-radius:12px;
+  padding:18px;font-size:18px;line-height:1.7;margin-bottom:18px}
+.consent ul{margin:10px 0 0;padding-right:22px;padding-left:0}
+.consent li{margin-bottom:6px}
+.agree{display:flex;align-items:flex-start;gap:12px;font-size:19px;
+  margin-bottom:20px;cursor:pointer}
+.agree input{width:30px;height:30px;flex:none;margin-top:3px;accent-color:var(--green)}
+
+.step{display:none}
+.step.on{display:block}
+.spin{display:inline-block;width:22px;height:22px;border:3px solid rgba(255,255,255,.4);
+  border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="brand">
+    <img src="logo_pt.png" alt="PT">
+    <h1>ระบบอบรมความปลอดภัย</h1>
+    <p>สำหรับพนักงานขับรถน้ำมัน</p>
+  </div>
+
+  <div id="msg" class="msg"></div>
+
+  <!-- ============ ขั้นที่ 1 : กรอกเบอร์โทร ============ -->
+  <section id="stepPhone" class="step on">
+    <div class="card">
+      <label for="phone">เบอร์โทรศัพท์ของท่าน</label>
+      <p class="hint">กรอกเบอร์มือถือ 10 หลัก</p>
+      <input type="tel" id="phone" inputmode="numeric" maxlength="12"
+             placeholder="08X-XXX-XXXX" autocomplete="tel">
+      <button class="btn" id="btnNext">เข้าใช้งาน</button>
+    </div>
+  </section>
+
+  <!-- ============ ขั้นที่ 1b : เบอร์เดียวมีหลายคน ============ -->
+  <section id="stepPick" class="step">
+    <div class="card">
+      <label>ท่านคือใคร</label>
+      <p class="hint">เบอร์นี้มีผู้ใช้งานมากกว่า 1 คน กรุณาเลือกชื่อของท่าน</p>
+      <div id="pickList"></div>
+      <button class="btn btn-ghost" onclick="goto('stepPhone')">ย้อนกลับ</button>
+    </div>
+  </section>
+
+  <!-- ============ ขั้นที่ 2 : ยินยอม PDPA ============ -->
+  <section id="stepConsent" class="step">
+    <div class="card">
+      <label>ก่อนลงทะเบียน</label>
+      <div class="consent">
+        ตาม <b>พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)</b>
+        ระบบขอเก็บข้อมูลของท่านดังนี้
+        <ul>
+          <li>ชื่อ-นามสกุล และเบอร์โทรศัพท์</li>
+          <li>เลขบัตรประชาชน (เก็บแบบเข้ารหัส)</li>
+          <li>บริษัท/สังกัด</li>
+        </ul>
+        <div style="margin-top:12px">
+          ใช้เพื่อ<b>ลงทะเบียนอบรมและออกบัตรเข้าคลัง</b>เท่านั้น
+          ท่านขอดูหรือขอลบข้อมูลได้ตลอดเวลา
+        </div>
+      </div>
+      <label class="agree">
+        <input type="checkbox" id="agree">
+        <span>ข้าพเจ้ายินยอมให้เก็บข้อมูลตามรายละเอียดข้างต้น</span>
+      </label>
+      <button class="btn" id="btnAgree" disabled>ยอมรับ และไปต่อ</button>
+      <button class="btn btn-ghost" onclick="goto('stepPhone')">ไม่ยอมรับ (กลับ)</button>
+    </div>
+  </section>
+
+  <!-- ============ ขั้นที่ 3 : ลงทะเบียน ============ -->
+  <section id="stepRegister" class="step">
+    <div class="card">
+      <label>ลงทะเบียนผู้ใช้ใหม่</label>
+      <p class="hint">กรอกให้ครบทุกช่อง</p>
+
+      <label for="regName" style="font-size:19px">ชื่อ-นามสกุล</label>
+      <input type="text" id="regName" class="name-field" placeholder="เช่น สมชาย ใจดี">
+
+      <label for="regId" style="font-size:19px">เลขบัตรประชาชน 13 หลัก</label>
+      <input type="tel" id="regId" inputmode="numeric" maxlength="13" placeholder="X XXXX XXXXX XX X">
+
+      <label for="regCompany" style="font-size:19px">บริษัท / สังกัด</label>
+      <input type="text" id="regCompany" class="name-field" placeholder="ชื่อบริษัทต้นสังกัด">
+
+      <button class="btn" id="btnRegister">บันทึก และเริ่มใช้งาน</button>
+      <button class="btn btn-ghost" onclick="goto('stepPhone')">ย้อนกลับ</button>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ===== ตั้งค่า (แก้ 2 บรรทัดนี้) =====================================
+const SUPABASE_URL  = "https://xxxxxxxxxxxx.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOi...";
+// ====================================================================
+
+const FN = `${SUPABASE_URL}/functions/v1/driver-auth`;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const $ = id => document.getElementById(id);
+let pendingPhone = "";
+
+// ---- สลับหน้าจอ ----
+window.goto = (id) => {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+  hideMsg();
+  window.scrollTo(0, 0);
+};
+const showErr  = t => { const m=$('msg'); m.className='msg error'; m.textContent=t; window.scrollTo(0,0); };
+const showInfo = t => { const m=$('msg'); m.className='msg info';  m.textContent=t; };
+const hideMsg  = () => { $('msg').className = 'msg'; };
+
+function busy(btn, on, label) {
+  btn.disabled = on;
+  btn.innerHTML = on ? '<span class="spin"></span> กรุณารอสักครู่' : label;
+}
+
+async function callFn(payload) {
+  const res = await fetch(FN, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON}` },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
+  return data;
+}
+
+async function enter(session) {
+  await sb.auth.setSession(session);
+  location.href = "home.html";
+}
+
+// ---- จัดรูปแบบเบอร์ให้อ่านง่ายระหว่างพิมพ์ ----
+$('phone').addEventListener('input', e => {
+  const d = e.target.value.replace(/\D/g, '').slice(0, 10);
+  e.target.value = d.length > 6 ? `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`
+                 : d.length > 3 ? `${d.slice(0,3)}-${d.slice(3)}`
+                 : d;
+});
+
+// ---- ขั้นที่ 1 : ตรวจเบอร์ ----
+$('btnNext').addEventListener('click', async () => {
+  const phone = $('phone').value.replace(/\D/g, '');
+  if (phone.length !== 10) return showErr("กรุณากรอกเบอร์โทรให้ครบ 10 หลัก");
+
+  busy($('btnNext'), true);
+  try {
+    const r = await callFn({ action: "lookup", phone });
+    pendingPhone = phone;
+
+    if (r.result === "single") {
+      showInfo("กำลังเข้าสู่ระบบ...");
+      await enter(r.session);
+
+    } else if (r.result === "multiple") {
+      $('pickList').innerHTML = "";
+      r.drivers.forEach(d => {
+        const b = document.createElement('button');
+        b.className = 'pick';
+        b.textContent = d.name;
+        b.onclick = async () => {
+          busy($('btnNext'), true);
+          try {
+            const s = await callFn({ action:"select", phone: pendingPhone, driver_id: d.id });
+            await enter(s.session);
+          } catch (e) { showErr(e.message); }
+        };
+        $('pickList').appendChild(b);
+      });
+      goto('stepPick');
+
+    } else {
+      goto('stepConsent');     // คนใหม่ → ขอความยินยอมก่อน
+    }
+  } catch (e) {
+    showErr(e.message);
+  } finally {
+    busy($('btnNext'), false, "เข้าใช้งาน");
+  }
+});
+
+$('phone').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnNext').click(); });
+
+// ---- ขั้นที่ 2 : ยินยอม ----
+$('agree').addEventListener('change', e => { $('btnAgree').disabled = !e.target.checked; });
+$('btnAgree').addEventListener('click', () => goto('stepRegister'));
+
+// ---- ขั้นที่ 3 : ลงทะเบียน ----
+$('regId').addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 13);
+});
+
+$('btnRegister').addEventListener('click', async () => {
+  const full_name  = $('regName').value.trim();
+  const national_id= $('regId').value.replace(/\D/g, '');
+  const company    = $('regCompany').value.trim();
+
+  if (!full_name)             return showErr("กรุณากรอกชื่อ-นามสกุล");
+  if (national_id.length !== 13) return showErr("เลขบัตรประชาชนต้องมี 13 หลัก");
+  if (!company)               return showErr("กรุณากรอกบริษัท/สังกัด");
+
+  busy($('btnRegister'), true);
+  try {
+    const r = await callFn({
+      action: "register",
+      phone: pendingPhone,
+      national_id, full_name, company,
+      consent: true,
+    });
+    showInfo("ลงทะเบียนสำเร็จ กำลังเข้าสู่ระบบ...");
+    await enter(r.session);
+  } catch (e) {
+    showErr(e.message);
+  } finally {
+    busy($('btnRegister'), false, "บันทึก และเริ่มใช้งาน");
+  }
+});
+
+// ---- ถ้าเคยเข้าไว้แล้ว ให้เข้าเลย ไม่ต้องกรอกอะไรอีก ----
+(async () => {
+  const { data } = await sb.auth.getSession();
+  if (data.session) location.href = "home.html";
+})();
+</script>
+</body>
+</html>
