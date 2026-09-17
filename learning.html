@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>วิดีโออบรม</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00a94f; --green-dark:#00863f; --red:#e3242b; --amber:#f5a623;
+  --ink:#1a1a1a; --muted:#5c5c5c; --line:#d4d4d4; --bg:#f4f6f8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',sans-serif;font-size:20px;line-height:1.6;padding-bottom:40px}
+.wrap{max-width:560px;margin:0 auto;padding:18px}
+
+.head{background:var(--green);color:#fff;padding:18px;text-align:center}
+.head h1{font-size:22px;margin:0;font-weight:700}
+
+/* ---- วิดีโอ ---- */
+.stage{position:relative;background:#000;aspect-ratio:16/9;width:100%}
+#player{position:absolute;inset:0;width:100%;height:100%}
+/* แผ่นใสคลุมวิดีโอ กันแตะโดนตัวเลื่อนเวลาของ YouTube */
+.shield{position:absolute;inset:0;z-index:5}
+
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.vtitle{font-size:22px;font-weight:700;margin-bottom:4px}
+.vsub{font-size:17px;color:var(--muted)}
+
+/* ---- แถบความคืบหน้า ---- */
+.track{height:18px;background:#e6e6e6;border-radius:10px;overflow:hidden;margin:16px 0 8px}
+.fill{height:100%;width:0;background:var(--green);border-radius:10px;transition:width .5s}
+.pctline{display:flex;justify-content:space-between;font-size:18px;color:var(--muted)}
+.pctline b{color:var(--green);font-size:22px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:72px;border:none;border-radius:14px;font-family:inherit;
+  font-size:24px;font-weight:700;cursor:pointer;background:var(--green);
+  color:#fff;margin-top:10px;text-decoration:none}
+.btn:active{background:var(--green-dark)}
+.btn:disabled{background:#c4c4c4;cursor:default}
+.btn-ghost{background:#fff;color:var(--muted);border:2px solid var(--line);font-weight:600}
+.btn-play{background:#fff;color:var(--ink);border:3px solid var(--green)}
+
+.alert{border-radius:12px;padding:16px 18px;font-size:19px;margin-bottom:14px;display:none}
+.alert.warn{display:block;background:#fff6e5;color:#8a5a00;border:1px solid #f0d8a5}
+.alert.ok{display:block;background:#e8f6ee;color:#00632f;border:1px solid #a9ddc0}
+.alert.bad{display:block;background:#ffeceb;color:#a3161c;border:1px solid #f5b5b3}
+
+/* ---- รายการวิดีโอ (กรณีมีหลายเรื่อง) ---- */
+.vitem{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid #eee}
+.vitem:last-child{border-bottom:none}
+.vitem .dot{flex:none;width:40px;height:40px;border-radius:50%;background:#e6e6e6;
+  color:#8a8a8a;display:flex;align-items:center;justify-content:center;font-weight:700}
+.vitem.done .dot{background:var(--green);color:#fff}
+.vitem.cur  .dot{background:var(--amber);color:#fff}
+.vitem .t{flex:1;font-size:19px;font-weight:600}
+.vitem .s{font-size:16px;color:var(--muted);font-weight:400}
+
+.loading{text-align:center;padding:80px 20px;color:var(--muted)}
+.spin{display:inline-block;width:40px;height:40px;border:4px solid #ddd;
+  border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading"><div class="spin"></div><p>กำลังโหลด...</p></div>
+
+<div id="app" class="hide">
+  <div class="head"><h1>วิดีโออบรมความปลอดภัย</h1></div>
+
+  <div class="stage">
+    <div id="player"></div>
+    <div class="shield"></div>
+  </div>
+
+  <div class="wrap">
+    <div id="alert" class="alert"></div>
+
+    <div class="card">
+      <div class="vtitle" id="vTitle">-</div>
+      <div class="vsub"   id="vSub"></div>
+
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="pctline">
+        <span>ความคืบหน้า</span>
+        <span><b id="pct">0%</b></span>
+      </div>
+
+      <button class="btn btn-play" id="btnPlay">▶ เริ่มเล่นวิดีโอ</button>
+    </div>
+
+    <div class="card hide" id="listCard">
+      <div style="font-size:19px;font-weight:700;margin-bottom:6px">วิดีโอทั้งหมด</div>
+      <div id="vList"></div>
+    </div>
+
+    <div id="doneBox" class="hide">
+      <div class="alert ok" style="display:block">
+        <b style="font-size:22px">ดูวิดีโอครบแล้ว</b><br>
+        ขั้นตอนต่อไปคือทำแบบทดสอบหลังอบรม
+      </div>
+      <a class="btn" href="exam.html?type=post">ทำแบบทดสอบหลังอบรม</a>
+    </div>
+
+    <a class="btn btn-ghost" href="home.html">กลับหน้าหลัก</a>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ===== ตั้งค่าให้ตรงกับ index.html =====
+const SUPABASE_URL  = "https://eldfrrdxsqvuhduhquth.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsZGZycmR4c3F2dWhkdWhxdXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDQ2OTEsImV4cCI6MjEwNTE4MDY5MX0.deIQONNK7B4RperTBvgnILVaETeAD23IZlpHlGnEfUQ";
+// ======================================
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const $ = id => document.getElementById(id);
+
+const { data:{ session } } = await sb.auth.getSession();
+if (!session) location.replace('index.html');
+
+const { data: p, error } = await sb.rpc('my_progress');
+if (error) { alert('โหลดข้อมูลไม่สำเร็จ: ' + error.message); location.replace('home.html'); }
+
+const videos = p.videos || [];
+if (videos.length === 0) { alert('ยังไม่มีวิดีโออบรมในระบบ'); location.replace('home.html'); }
+
+// เล่นเรื่องแรกที่ยังดูไม่จบ
+let idx = videos.findIndex(v => !v.completed);
+if (idx === -1) idx = videos.length - 1;
+let cur = videos[idx];
+
+let player = null, timer = null, required = 0;
+
+$('loading').classList.add('hide');
+$('app').classList.remove('hide');
+renderList();
+renderCurrent();
+
+// ---- ดึง video id จาก URL หลายรูปแบบ ----
+function youtubeId(url) {
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : url.trim();
+}
+
+function renderList() {
+  if (videos.length <= 1) return;
+  $('listCard').classList.remove('hide');
+  $('vList').innerHTML = videos.map((v,i) => `
+    <div class="vitem ${v.completed ? 'done' : i === idx ? 'cur' : ''}">
+      <div class="dot">${v.completed ? '✓' : i+1}</div>
+      <div class="t">${v.title}
+        <div class="s">${v.completed ? 'ดูจบแล้ว' : i === idx ? 'กำลังดู' : 'รอคิว'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderCurrent() {
+  $('vTitle').textContent = cur.title;
+  $('vSub').textContent   = videos.length > 1 ? `เรื่องที่ ${idx+1} จาก ${videos.length}` : '';
+  required = Math.ceil(cur.duration * 0.95);
+  paint(cur.watched);
+  if (cur.completed) markDone(false);
+}
+
+function paint(watched) {
+  const pct = Math.min(100, Math.round(watched * 100 / required));
+  $('fill').style.width = pct + '%';
+  $('pct').textContent  = pct + '%';
+}
+
+function say(kind, text) {
+  const a = $('alert');
+  a.className = 'alert ' + kind;
+  a.innerHTML = text;
+}
+
+// ---- โหลด YouTube IFrame API ----
+const tag = document.createElement('script');
+tag.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(tag);
+
+window.onYouTubeIframeAPIReady = () => {
+  player = new YT.Player('player', {
+    videoId: youtubeId(cur.url),
+    playerVars: {
+      controls: 0,        // ซ่อนตัวควบคุมของ YouTube (รวมตัวเลื่อนเวลา)
+      disablekb: 1,       // ปิดปุ่มลัดคีย์บอร์ด
+      fs: 0,              // ปิดปุ่มเต็มจอ
+      rel: 0,
+      modestbranding: 1,
+      playsinline: 1,     // จำเป็นสำหรับ iPhone
+    },
+    events: {
+      onReady: () => {
+        // เริ่มต่อจากจุดที่ดูค้างไว้
+        if (cur.watched > 5 && !cur.completed) player.seekTo(cur.watched, true);
+      },
+      onStateChange: onState,
+    },
+  });
+};
+
+function onState(e) {
+  if (e.data === YT.PlayerState.PLAYING) {
+    $('btnPlay').innerHTML = '⏸ หยุดชั่วคราว';
+    startBeat();
+  } else {
+    $('btnPlay').innerHTML = '▶ เล่นวิดีโอต่อ';
+    stopBeat();
+  }
+  if (e.data === YT.PlayerState.ENDED) { stopBeat(); beat(); }
+}
+
+$('btnPlay').addEventListener('click', () => {
+  if (!player) return;
+  const s = player.getPlayerState();
+  if (s === YT.PlayerState.PLAYING) player.pauseVideo();
+  else player.playVideo();
+});
+
+// ---- ส่งความคืบหน้าให้ server ตรวจทุก 5 วินาที ----
+function startBeat(){ stopBeat(); timer = setInterval(beat, 5000); }
+function stopBeat(){ if (timer) { clearInterval(timer); timer = null; } }
+
+let busy = false;
+async function beat() {
+  if (!player || busy) return;
+  busy = true;
+  try {
+    const pos = Math.floor(player.getCurrentTime());
+    const { data, error } = await sb.rpc('video_heartbeat', {
+      p_video_id:     cur.id,
+      p_position_sec: pos,
+    });
+    if (error) throw error;
+
+    cur.watched = data.watched;
+    paint(data.watched);
+
+    // server ปฏิเสธ → ดึงกลับไปจุดที่ดูจริง
+    if (data.accepted === false) {
+      if (data.reason === 'seek_forward') {
+        say('bad', '<b>ห้ามกดข้ามวิดีโอ</b><br>ระบบได้ย้อนกลับไปยังจุดที่ดูค้างไว้');
+        player.seekTo(data.watched, true);
+      } else if (data.reason === 'playback_rate') {
+        say('bad', '<b>ห้ามเร่งความเร็ววิดีโอ</b><br>ช่วงที่เร่งจะไม่ถูกนับเวลา');
+      }
+    } else if ($('alert').classList.contains('bad')) {
+      $('alert').className = 'alert';
+    }
+
+    if (data.completed) {
+      stopBeat();
+      player.pauseVideo();
+      cur.completed = true;
+      await nextOrDone();
+    }
+  } catch (e) {
+    say('warn', 'บันทึกความคืบหน้าไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต');
+  } finally {
+    busy = false;
+  }
+}
+
+// ---- ดูจบเรื่องหนึ่งแล้ว ----
+async function nextOrDone() {
+  renderList();
+  const next = videos.findIndex(v => !v.completed);
+  if (next === -1) return markDone(true);
+
+  idx = next; cur = videos[idx];
+  say('ok', '<b>ดูจบแล้ว</b><br>กำลังไปยังวิดีโอเรื่องถัดไป');
+  renderCurrent(); renderList();
+  player.loadVideoById(youtubeId(cur.url));
+  player.pauseVideo();
+}
+
+function markDone(announce) {
+  stopBeat();
+  $('btnPlay').disabled = true;
+  $('btnPlay').innerHTML = '✓ ดูจบแล้ว';
+  $('doneBox').classList.remove('hide');
+  $('fill').style.width = '100%';
+  $('pct').textContent = '100%';
+  if (announce) window.scrollTo(0, document.body.scrollHeight);
+}
+
+// ---- สลับไปแอปอื่นแล้วให้หยุดเล่น (กันเปิดทิ้งไว้เฉย ๆ) ----
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+    player.pauseVideo();
+  }
+});
+</script>
+</body>
+</html>
