@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ส่งเอกสาร</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00a94f; --green-dark:#00863f; --red:#e3242b; --amber:#f5a623;
+  --ink:#1a1a1a; --muted:#5c5c5c; --line:#d4d4d4; --bg:#f4f6f8;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',sans-serif;font-size:20px;line-height:1.6;padding-bottom:40px}
+.wrap{max-width:560px;margin:0 auto;padding:18px}
+.head{background:var(--green);color:#fff;padding:20px;text-align:center}
+.head h1{font-size:23px;margin:0;font-weight:700}
+.head p{margin:4px 0 0;font-size:17px;opacity:.9}
+
+.card{background:#fff;border-radius:16px;padding:22px;margin-bottom:16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07)}
+
+/* ---- ช่องอัปโหลด ---- */
+.slot{border:3px dashed var(--line);border-radius:14px;padding:24px 18px;
+  text-align:center;cursor:pointer;background:#fafafa;margin-top:12px}
+.slot:active{background:#f0fff6;border-color:var(--green)}
+.slot .ic{font-size:44px;line-height:1}
+.slot .tx{font-size:19px;color:var(--muted);margin-top:6px}
+.slot.has{border-style:solid;border-color:var(--green);background:#fff;padding:10px}
+.slot img{width:100%;border-radius:10px;display:block}
+
+.slot-title{font-size:21px;font-weight:700}
+.slot-req{color:var(--red);font-size:18px}
+.slot-note{font-size:17px;color:var(--muted);margin-top:2px}
+
+.state{display:inline-block;font-size:16px;font-weight:700;padding:4px 14px;
+  border-radius:20px;margin-top:8px}
+.state.pending{background:#fff6e5;color:#8a5a00}
+.state.approved{background:#e8f6ee;color:#00632f}
+.state.rejected{background:#ffeceb;color:#a3161c}
+
+input[type=date]{width:100%;height:64px;font-size:22px;font-family:inherit;
+  border:2px solid var(--line);border-radius:12px;padding:0 14px;margin-top:10px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;height:72px;border:none;border-radius:14px;font-family:inherit;
+  font-size:24px;font-weight:700;cursor:pointer;background:var(--green);
+  color:#fff;margin-top:10px;text-decoration:none}
+.btn:active{background:var(--green-dark)}
+.btn:disabled{background:#c4c4c4;cursor:default}
+.btn-ghost{background:#fff;color:var(--muted);border:2px solid var(--line);font-weight:600}
+
+.alert{border-radius:12px;padding:18px;font-size:19px;margin-bottom:16px;display:none}
+.alert.warn{display:block;background:#fff6e5;color:#8a5a00;border:1px solid #f0d8a5}
+.alert.ok{display:block;background:#e8f6ee;color:#00632f;border:1px solid #a9ddc0}
+.alert.bad{display:block;background:#ffeceb;color:#a3161c;border:1px solid #f5b5b3}
+.alert b{display:block;font-size:22px;margin-bottom:4px}
+
+.consent{background:#fffbe9;border:1px solid #f0ddaa;border-radius:12px;
+  padding:18px;font-size:18px;line-height:1.7;margin-bottom:18px}
+.consent ul{margin:10px 0 0;padding-right:22px;padding-left:0}
+.agree{display:flex;align-items:flex-start;gap:12px;font-size:19px;
+  margin-bottom:16px;cursor:pointer}
+.agree input{width:30px;height:30px;flex:none;margin-top:3px;accent-color:var(--green)}
+
+.loading{text-align:center;padding:80px 20px;color:var(--muted)}
+.spin{display:inline-block;width:40px;height:40px;border:4px solid #ddd;
+  border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite}
+.spin.sm{width:20px;height:20px;border-width:3px;border-top-color:#fff}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading"><div class="spin"></div><p>กำลังโหลด...</p></div>
+
+<div id="app" class="hide">
+  <div class="head">
+    <h1>ส่งรูปถ่ายและเอกสาร</h1>
+    <p>ขั้นตอนสุดท้ายก่อนรับบัตร</p>
+  </div>
+
+  <div class="wrap">
+    <div id="alert" class="alert"></div>
+
+    <!-- ---- ยินยอม PDPA รอบเอกสาร ---- -->
+    <div id="consentBox" class="card hide">
+      <div class="slot-title">ก่อนส่งเอกสาร</div>
+      <div class="consent">
+        ระบบขอเก็บ<b>รูปถ่ายและสำเนาเอกสาร</b>ของท่าน
+        <ul>
+          <li>รูปถ่ายหน้าตรง — ใช้พิมพ์บนบัตร</li>
+          <li>สำเนาบัตรประชาชน — ใช้ยืนยันตัวตน</li>
+          <li>สำเนาใบขับขี่ — ใช้ตรวจสอบสิทธิ์การขับขี่</li>
+        </ul>
+        <div style="margin-top:12px">
+          เก็บไว้ในระบบที่<b>เข้ารหัสและจำกัดสิทธิ์</b>
+          เปิดดูได้เฉพาะเจ้าหน้าที่คลังที่เกี่ยวข้อง
+          และจะลบเมื่อท่านพ้นสภาพเกิน 2 ปี
+        </div>
+      </div>
+      <label class="agree">
+        <input type="checkbox" id="agree">
+        <span>ข้าพเจ้ายินยอมให้เก็บรูปถ่ายและสำเนาเอกสารตามรายละเอียดข้างต้น</span>
+      </label>
+      <button class="btn" id="btnAgree" disabled>ยอมรับ และเริ่มส่งเอกสาร</button>
+      <a class="btn btn-ghost" href="home.html">ย้อนกลับ</a>
+    </div>
+
+    <!-- ---- ช่องอัปโหลด ---- -->
+    <div id="uploadBox" class="hide">
+      <div id="slots"></div>
+
+      <button class="btn" id="btnSubmit">ส่งให้เจ้าหน้าที่ตรวจสอบ</button>
+      <a class="btn btn-ghost" href="home.html">กลับหน้าหลัก</a>
+    </div>
+
+    <!-- ---- ส่งแล้ว รอตรวจ ---- -->
+    <div id="doneBox" class="hide">
+      <div class="alert ok" style="display:block">
+        <b>ส่งเอกสารเรียบร้อย</b>
+        เจ้าหน้าที่กำลังตรวจสอบ เมื่อตรวจเสร็จท่านจะได้รับบัตรเข้าคลัง
+      </div>
+      <a class="btn" href="home.html">กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="picker" accept="image/*" capture="environment" class="hide">
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ===== ตั้งค่าให้ตรงกับ index.html =====
+const SUPABASE_URL  = "https://eldfrrdxsqvuhduhquth.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVsZGZycmR4c3F2dWhkdWhxdXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2MDQ2OTEsImV4cCI6MjEwNTE4MDY5MX0.deIQONNK7B4RperTBvgnILVaETeAD23IZlpHlGnEfUQ";
+//  ======================================
+
+const POLICY_VERSION = "2026-01";
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const $ = id => document.getElementById(id);
+
+const TYPES = [
+  { key:'profile_photo',   title:'รูปถ่ายหน้าตรง',  bucket:'driver-photos', req:true,
+    note:'ถ่ายให้เห็นหน้าชัดเจน ไม่สวมหมวกหรือแว่นดำ' },
+  { key:'national_id',     title:'รูปบัตรประชาชน',  bucket:'driver-docs',   req:true,
+    note:'ถ่ายด้านหน้า ให้เห็นตัวหนังสือครบทุกบรรทัด' },
+  { key:'driving_license', title:'รูปใบขับขี่',     bucket:'driver-docs',   req:true,
+    note:'ถ่ายด้านหน้า และกรอกวันหมดอายุด้านล่าง', expiry:true },
+  { key:'other',           title:'เอกสารอื่น ๆ',    bucket:'driver-docs',   req:false,
+    note:'ถ้ามี เช่น บัตรผู้รับเหมา (ไม่บังคับ)' },
+];
+
+let docs = {};          // doc_type → เอกสารล่าสุด
+let picked = {};        // doc_type → { file, dataUrl }  ที่เลือกไว้แต่ยังไม่ส่ง
+
+function say(kind, html){ const a=$('alert'); a.className='alert '+kind; a.innerHTML=html; window.scrollTo(0,0); }
+function clearSay(){ $('alert').className='alert'; }
+
+// ---- ต้องล็อกอิน ----
+const { data:{ session } } = await sb.auth.getSession();
+if (!session) location.replace('index.html');
+
+let driverId = null;
+
+async function load() {
+  const { data, error } = await sb.rpc('my_documents');
+  if (error) { alert('โหลดข้อมูลไม่สำเร็จ: ' + error.message); location.replace('home.html'); return; }
+
+  const { data: prog } = await sb.rpc('my_progress');
+  driverId = prog.driver_id;
+
+  docs = {};
+  data.documents.forEach(d => { docs[d.doc_type] = d; });
+
+  $('loading').classList.add('hide');
+  $('app').classList.remove('hide');
+
+  // ยังไม่ยินยอม → ขอยินยอมก่อน
+  if (!data.consent_ok) {
+    $('consentBox').classList.remove('hide');
+    return;
+  }
+
+  // ส่งแล้วรอตรวจ
+  if (data.status === 'docs_submitted') {
+    $('doneBox').classList.remove('hide');
+    return;
+  }
+
+  if (data.status === 'docs_rejected') {
+    const bad = data.documents.filter(d => d.status === 'rejected');
+    say('bad', `<b>เอกสารถูกตีกลับ</b>` +
+      bad.map(d => {
+        const t = TYPES.find(x => x.key === d.doc_type);
+        return `${t ? t.title : d.doc_type}: ${d.reject_reason || 'กรุณาส่งใหม่'}`;
+      }).join('<br>') +
+      `<div style="margin-top:8px">ส่งใหม่เฉพาะรายการที่ถูกตีกลับได้เลย</div>`);
+  }
+
+  $('uploadBox').classList.remove('hide');
+  renderSlots();
+}
+
+// ---- ยินยอม ----
+$('agree').addEventListener('change', e => { $('btnAgree').disabled = !e.target.checked; });
+$('btnAgree').addEventListener('click', async () => {
+  $('btnAgree').disabled = true;
+  const { error } = await sb.rpc('consent_documents', { p_policy_version: POLICY_VERSION });
+  if (error) { say('bad', error.message); $('btnAgree').disabled = false; return; }
+  $('consentBox').classList.add('hide');
+  await load();
+});
+
+// ---- วาดช่องอัปโหลด ----
+function renderSlots() {
+  $('slots').innerHTML = TYPES.map(t => {
+    const d = docs[t.key];
+    const p = picked[t.key];
+    const img = p ? p.dataUrl : null;
+    const locked = d && d.status === 'approved';
+
+    let state = '';
+    if (d && !p) {
+      const label = { pending:'รอตรวจสอบ', approved:'ผ่านแล้ว', rejected:'ถูกตีกลับ' }[d.status] || d.status;
+      state = `<span class="state ${d.status}">${label}</span>`;
+    } else if (p) {
+      state = `<span class="state pending">เลือกรูปแล้ว</span>`;
+    }
+
+    return `
+      <div class="card">
+        <div class="slot-title">${t.title} ${t.req ? '<span class="slot-req">*</span>' : ''}</div>
+        <div class="slot-note">${t.note}</div>
+        ${state}
+        <div class="slot ${img ? 'has' : ''}" data-key="${t.key}" ${locked ? 'style="opacity:.6"' : ''}>
+          ${img
+            ? `<img src="${img}">`
+            : d
+              ? `<div class="ic">🖼️</div><div class="tx">ส่งไปแล้ว — แตะเพื่อเปลี่ยนรูปใหม่</div>`
+              : `<div class="ic">📷</div><div class="tx">แตะเพื่อถ่ายรูป หรือเลือกจากเครื่อง</div>`}
+        </div>
+        ${t.expiry ? `
+          <label style="display:block;font-size:19px;font-weight:600;margin-top:14px">
+            วันหมดอายุใบขับขี่ <span class="slot-req">*</span></label>
+          <input type="date" id="exp_${t.key}"
+                 value="${d && d.expiry_date ? d.expiry_date : ''}">` : ''}
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('.slot').forEach(el => {
+    el.onclick = () => choose(el.dataset.key);
+  });
+}
+
+// ---- เลือกรูป + ย่อขนาดก่อนอัป ----
+let currentKey = null;
+function choose(key) {
+  currentKey = key;
+  $('picker').value = '';
+  $('picker').click();
+}
+
+$('picker').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file || !currentKey) return;
+  const dataUrl = await compress(file, 1400);
+  picked[currentKey] = { dataUrl };
+  clearSay();
+  renderSlots();
+});
+
+// ย่อรูปให้ด้านยาวไม่เกิน maxW และบีบเป็น JPEG
+// มือถือรุ่นใหม่ถ่ายไฟล์ละ 5-8 MB เน็ตหน้างานอัปไม่ไหว
+function compress(file, maxW) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        let { width:w, height:h } = img;
+        const scale = Math.min(1, maxW / Math.max(w, h));
+        w = Math.round(w * scale); h = Math.round(h * scale);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [head, b64] = dataUrl.split(',');
+  const mime = head.match(/:(.*?);/)[1];
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// ---- ส่งทั้งหมด ----
+$('btnSubmit').addEventListener('click', async () => {
+  clearSay();
+  const btn = $('btnSubmit');
+  btn.disabled = true;
+
+  try {
+    // ตรวจครบก่อนอัป จะได้ไม่เสียเน็ตฟรี
+    for (const t of TYPES.filter(x => x.req)) {
+      const has = picked[t.key] || (docs[t.key] && docs[t.key].status !== 'rejected');
+      if (!has) throw new Error(`ยังไม่ได้ส่ง: ${t.title}`);
+    }
+    const expEl = $('exp_driving_license');
+    const expiry = expEl ? expEl.value : null;
+    if (!expiry) throw new Error('กรุณากรอกวันหมดอายุใบขับขี่');
+    if (new Date(expiry) <= new Date()) throw new Error('ใบขับขี่หมดอายุแล้ว กรุณาต่ออายุก่อน');
+
+    // อัปทีละไฟล์
+    const keys = Object.keys(picked);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const t   = TYPES.find(x => x.key === key);
+      btn.innerHTML = `<span class="spin sm"></span> กำลังส่ง ${t.title} (${i+1}/${keys.length})`;
+
+      const blob = dataUrlToBlob(picked[key].dataUrl);
+      const path = `${driverId}/${key}_${Date.now()}.jpg`;
+
+      const { error: upErr } = await sb.storage
+        .from(t.bucket).upload(path, blob, { contentType:'image/jpeg', upsert:false });
+      if (upErr) throw new Error(`อัปโหลด ${t.title} ไม่สำเร็จ: ${upErr.message}`);
+
+      const { error: saveErr } = await sb.rpc('save_document', {
+        p_doc_type:    key,
+        p_file_path:   `${t.bucket}/${path}`.replace(`${t.bucket}/`, ''),
+        p_expiry_date: key === 'driving_license' ? expiry : null,
+      });
+      if (saveErr) throw new Error(saveErr.message);
+    }
+
+    btn.innerHTML = `<span class="spin sm"></span> กำลังส่งให้เจ้าหน้าที่`;
+    const { error: subErr } = await sb.rpc('submit_documents');
+    if (subErr) throw new Error(subErr.message);
+
+    picked = {};
+    $('uploadBox').classList.add('hide');
+    $('doneBox').classList.remove('hide');
+    clearSay();
+    window.scrollTo(0, 0);
+
+  } catch (e) {
+    say('bad', `<b>ส่งไม่สำเร็จ</b>${e.message}`);
+    btn.disabled = false;
+    btn.textContent = 'ส่งให้เจ้าหน้าที่ตรวจสอบ';
+  }
+});
+
+await load();
+</script>
+</body>
+</html>
