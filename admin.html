@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบเจ้าหน้าที่ — อบรมพนักงานขับรถ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#00a94f; --green-dark:#00863f; --red:#e3242b; --amber:#f5a623;
+  --ink:#1a1a1a; --muted:#6b6b6b; --line:#dcdcdc; --bg:#f2f4f6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',sans-serif;font-size:16px;line-height:1.55}
+.top{background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20}
+.top h1{font-size:19px;margin:0;font-weight:700;flex:1}
+.who{font-size:14px;color:var(--muted)}
+.wrap{max-width:1200px;margin:0 auto;padding:18px 20px 60px}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{background:#fff;border:1px solid var(--line);border-radius:22px;
+  padding:8px 18px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--muted)}
+.tab.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+.tab .n{font-weight:700;margin-right:5px}
+
+.search{width:100%;max-width:360px;height:44px;border:1px solid var(--line);
+  border-radius:10px;padding:0 14px;font-family:inherit;font-size:16px;margin-bottom:14px}
+
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;
+  overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+th,td{padding:12px 14px;text-align:right;border-bottom:1px solid #f0f0f0;font-size:15px}
+th{background:#fafafa;font-weight:600;color:var(--muted);font-size:14px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.clickable{cursor:pointer}
+tr.clickable:hover{background:#f7fbf8}
+
+.pill{display:inline-block;font-size:13px;font-weight:600;padding:3px 12px;border-radius:14px;white-space:nowrap}
+.p-gray{background:#eee;color:#666}
+.p-amber{background:#fff4e0;color:#8a5a00}
+.p-green{background:#e6f6ec;color:#00632f}
+.p-red{background:#ffecea;color:#a3161c}
+.p-blue{background:#e7f0ff;color:#14458c}
+
+.btn{border:none;border-radius:10px;padding:11px 20px;font-family:inherit;
+  font-size:16px;font-weight:600;cursor:pointer;background:var(--green);color:#fff}
+.btn:active{background:var(--green-dark)}
+.btn:disabled{background:#c6c6c6;cursor:default}
+.btn-red{background:var(--red)}
+.btn-ghost{background:#fff;border:1px solid var(--line);color:var(--muted)}
+.btn-sm{padding:7px 14px;font-size:14px}
+
+/* ---- แผงรายละเอียด ---- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none}
+.overlay.on{display:block}
+.panel{position:fixed;top:0;left:0;bottom:0;width:min(760px,100%);background:var(--bg);
+  z-index:51;overflow-y:auto;transform:translateX(-100%);transition:transform .25s}
+.panel.on{transform:none}
+.panel-head{background:#fff;padding:16px 20px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;display:flex;align-items:center;gap:12px}
+.panel-head h2{font-size:20px;margin:0;flex:1}
+.panel-body{padding:20px}
+
+.box{background:#fff;border-radius:12px;padding:18px;margin-bottom:16px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;font-size:15px}
+.kv .k{color:var(--muted)}
+
+.doc{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px;background:#fff}
+.doc-head{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#fafafa;
+  border-bottom:1px solid var(--line)}
+.doc-head .t{flex:1;font-weight:600}
+.doc img{width:100%;display:block;background:#222;max-height:460px;object-fit:contain}
+.doc-foot{padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.doc-foot .exp{flex:1;font-size:14px;color:var(--muted)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.spin{display:inline-block;width:28px;height:28px;border:3px solid #ddd;
+  border-top-color:var(--green);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none}
+
+/* ---- หน้าล็อกอิน ---- */
+.login{max-width:380px;margin:80px auto;background:#fff;border-radius:16px;
+  padding:34px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.login h2{margin:0 0 20px;text-align:center;font-size:22px}
+.login input{width:100%;height:50px;border:1px solid var(--line);border-radius:10px;
+  padding:0 14px;font-family:inherit;font-size:16px;margin-bottom:14px}
+.login .btn{width:100%;height:50px}
+.err{background:#ffecea;color:#a3161c;border-radius:10px;padding:12px;
+  font-size:15px;margin-bottom:14px;display:none}
+.err.on{display:block}
+.err.ok{background:#e6f6ec;color:#00632f}
+
+/* ---- กล่องจัดการเจ้าหน้าที่ ---- */
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+  width:min(680px,94vw);max-height:88vh;background:var(--bg);border-radius:16px;
+  z-index:61;overflow-y:auto;display:none;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.modal.on{display:block;transform:translate(-50%,-50%)}
+.modal-head{background:#fff;padding:16px 20px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;display:flex;align-items:center;gap:12px}
+.modal-head h2{font-size:19px;margin:0;flex:1}
+.modal-body{padding:20px}
+#staffOverlay{z-index:60}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+.lbl{display:block;font-size:14px;color:var(--muted);margin-bottom:5px}
+.modal input,.modal select{width:100%;height:44px;border:1px solid var(--line);
+  border-radius:9px;padding:0 12px;font-family:inherit;font-size:15px;background:#fff}
+.srow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0f0f0}
+.srow:last-child{border-bottom:none}
+.srow .n{flex:1}
+.srow .u{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ============ ล็อกอิน ============ -->
+<div id="loginView" class="hide">
+  <div class="login">
+    <h2>ระบบเจ้าหน้าที่</h2>
+    <div id="loginErr" class="err"></div>
+    <input type="text" id="username" placeholder="ชื่อผู้ใช้" autocomplete="username"
+           autocapitalize="off" spellcheck="false">
+    <input type="password" id="password" placeholder="รหัสผ่าน" autocomplete="current-password">
+    <button class="btn" id="btnLogin">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<!-- ============ หน้าหลัก ============ -->
+<div id="mainView" class="hide">
+  <div class="top">
+    <h1>ระบบอบรมพนักงานขับรถ — เจ้าหน้าที่</h1>
+    <span class="who" id="who"></span>
+    <button class="btn btn-ghost btn-sm hide" id="btnStaff">จัดการเจ้าหน้าที่</button>
+    <button class="btn btn-ghost btn-sm" id="btnOut">ออกจากระบบ</button>
+  </div>
+
+  <div class="wrap">
+    <div class="tabs" id="tabs"></div>
+    <input class="search" id="search" placeholder="ค้นหาชื่อ หรือเบอร์โทร">
+    <div id="tableBox"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ============ จัดการเจ้าหน้าที่ ============ -->
+<div class="overlay" id="staffOverlay"></div>
+<div class="modal" id="staffModal">
+  <div class="modal-head">
+    <h2>จัดการเจ้าหน้าที่</h2>
+    <button class="btn btn-ghost btn-sm" id="btnStaffClose">ปิด</button>
+  </div>
+  <div class="modal-body">
+    <div id="staffErr" class="err"></div>
+
+    <div class="box">
+      <div style="font-weight:700;margin-bottom:12px">เพิ่มเจ้าหน้าที่ใหม่</div>
+      <div class="grid2">
+        <div>
+          <label class="lbl">ชื่อผู้ใช้ (ภาษาอังกฤษ)</label>
+          <input type="text" id="nsUser" placeholder="เช่น somchai"
+                 autocapitalize="off" spellcheck="false">
+        </div>
+        <div>
+          <label class="lbl">รหัสผ่าน (อย่างน้อย 8 ตัว)</label>
+          <input type="text" id="nsPass" placeholder="ตั้งรหัสให้เจ้าหน้าที่">
+        </div>
+        <div>
+          <label class="lbl">ชื่อ-สกุล</label>
+          <input type="text" id="nsName" placeholder="สมชาย ใจดี">
+        </div>
+        <div>
+          <label class="lbl">ตำแหน่ง</label>
+          <select id="nsRole">
+            <option value="depot_officer">เจ้าหน้าที่คลัง — ตรวจเอกสาร</option>
+            <option value="depot_manager">หัวหน้าคลัง — ตรวจเอกสาร + ออกบัตร</option>
+            <option value="super_admin">ผู้ดูแลระบบ — ทุกอย่าง</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="btnStaffAdd" style="margin-top:14px">เพิ่มเจ้าหน้าที่</button>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:700;margin-bottom:12px">รายชื่อเจ้าหน้าที่</div>
+      <div id="staffList"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ แผงรายละเอียด ============ -->
+<div class="overlay" id="overlay"></div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <button class="btn btn-ghost btn-sm" id="btnClose">ปิด</button>
+    <h2 id="pName">-</h2>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ===== ตั้งค่าให้ตรงกับ index.html =====
+const SUPABASE_URL  = "https://xxxxxxxxxxxx.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOi...";
+// ======================================
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const $ = id => document.getElementById(id);
+
+const STATUS = {
+  registered:     ['ลงทะเบียนแล้ว',    'p-gray'],
+  pre_tested:     ['สอบก่อนแล้ว',       'p-gray'],
+  training:       ['กำลังอบรม',         'p-blue'],
+  trained:        ['อบรมจบ',            'p-blue'],
+  failed:         ['สอบไม่ผ่าน',        'p-red'],
+  passed:         ['สอบผ่าน',           'p-green'],
+  docs_submitted: ['รอตรวจเอกสาร',      'p-amber'],
+  docs_rejected:  ['เอกสารถูกตีกลับ',   'p-red'],
+  approved:       ['รอออกบัตร',         'p-amber'],
+  card_issued:    ['ออกบัตรแล้ว',       'p-green'],
+  suspended:      ['ระงับสิทธิ์',        'p-red'],
+};
+const DOC = {
+  profile_photo:   'รูปถ่ายหน้าตรง',
+  national_id:     'บัตรประชาชน',
+  driving_license: 'ใบขับขี่',
+  other:           'เอกสารอื่น',
+};
+const BUCKET = t => t === 'profile_photo' ? 'driver-photos' : 'driver-docs';
+
+let me = null, filter = 'docs_submitted', rows = [];
+
+// ---- ล็อกอิน ----
+async function boot() {
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return showLogin();
+
+  const { data: staff, error } = await sb.from('staff')
+    .select('full_name, role').eq('id', session.user.id).maybeSingle();
+
+  if (error || !staff) {
+    await sb.auth.signOut();
+    return showLogin('บัญชีนี้ไม่มีสิทธิ์เข้าระบบเจ้าหน้าที่');
+  }
+  me = { ...staff, id: session.user.id };
+  $('who').textContent = `${staff.full_name} · ${ROLE_TH[staff.role] || staff.role}`;
+  if (staff.role === 'super_admin') $('btnStaff').classList.remove('hide');
+  $('loginView').classList.add('hide');
+  $('mainView').classList.remove('hide');
+  await refresh();
+}
+
+function showLogin(msg) {
+  $('mainView').classList.add('hide');
+  $('loginView').classList.remove('hide');
+  if (msg) { $('loginErr').textContent = msg; $('loginErr').classList.add('on'); }
+}
+
+// Supabase Auth ต้องการอีเมล — ต่อ @staff.local ให้เอง เจ้าหน้าที่พิมพ์แค่ชื่อผู้ใช้
+const STAFF_DOMAIN = 'staff.local';
+const emailFor = u => `${u.trim().toLowerCase()}@${STAFF_DOMAIN}`;
+
+$('btnLogin').addEventListener('click', async () => {
+  $('loginErr').classList.remove('on');
+  const u = $('username').value.trim();
+  if (!u) { $('loginErr').textContent = 'กรุณากรอกชื่อผู้ใช้'; $('loginErr').classList.add('on'); return; }
+
+  $('btnLogin').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({
+    email: emailFor(u), password: $('password').value,
+  });
+  $('btnLogin').disabled = false;
+  if (error) {
+    $('loginErr').textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    $('loginErr').classList.add('on');
+    return;
+  }
+  await boot();
+});
+$('username').addEventListener('keydown', e => { if (e.key === 'Enter') $('password').focus(); });
+$('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnLogin').click(); });
+
+$('btnOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+// ---- ตารางรายชื่อ ----
+async function refresh() {
+  const { data: counts } = await sb.rpc('staff_counts');
+  const order = ['docs_submitted','approved','docs_rejected','passed','failed',
+                 'training','trained','pre_tested','registered','card_issued'];
+  $('tabs').innerHTML =
+    `<button class="tab ${filter===''?'on':''}" data-s="">ทั้งหมด</button>` +
+    order.filter(s => counts && counts[s]).map(s =>
+      `<button class="tab ${filter===s?'on':''}" data-s="${s}">
+         <span class="n">${counts[s]}</span>${STATUS[s][0]}</button>`).join('');
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => { filter = t.dataset.s; refresh(); };
+  });
+
+  const { data, error } = await sb.rpc('staff_drivers', {
+    p_status: filter || null,
+    p_search: $('search').value.trim() || null,
+  });
+  if (error) { $('tableBox').innerHTML = `<div class="empty">${error.message}</div>`; return; }
+
+  rows = data;
+  if (!rows.length) { $('tableBox').innerHTML = `<div class="empty">ไม่มีรายการ</div>`; return; }
+
+  $('tableBox').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>ชื่อ-สกุล</th><th>บริษัท</th><th>เบอร์โทร</th>
+        <th>ก่อน/หลัง</th><th>รอบ</th><th>สถานะ</th><th>บัตร</th>
+      </tr></thead>
+      <tbody>${rows.map((r,i) => `
+        <tr class="clickable" data-i="${i}">
+          <td><b>${r.name}</b>${r.pending_docs > 0
+              ? ` <span class="pill p-amber">${r.pending_docs} ใบรอตรวจ</span>` : ''}</td>
+          <td>${r.company || '-'}</td>
+          <td>${r.phone}</td>
+          <td>${r.pre_score != null ? Math.round(r.pre_score)+'%' : '-'} /
+              ${r.post_score != null ? Math.round(r.post_score)+'%' : '-'}</td>
+          <td>ปีที่ ${r.cycle}</td>
+          <td><span class="pill ${STATUS[r.status][1]}">${STATUS[r.status][0]}</span></td>
+          <td>${r.card ? r.card.number : '-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  document.querySelectorAll('tr.clickable').forEach(tr => {
+    tr.onclick = () => openDriver(rows[tr.dataset.i].id);
+  });
+}
+
+let searchTimer;
+$('search').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(refresh, 400);
+});
+
+// ---- แผงรายละเอียด ----
+function closePanel(){ $('panel').classList.remove('on'); $('overlay').classList.remove('on'); }
+$('btnClose').onclick = closePanel;
+$('overlay').onclick = closePanel;
+
+async function openDriver(id) {
+  $('panel').classList.add('on');
+  $('overlay').classList.add('on');
+  $('panelBody').innerHTML = `<div class="empty"><div class="spin"></div></div>`;
+
+  const { data: d, error } = await sb.rpc('staff_driver_detail', { p_driver_id: id });
+  if (error) { $('panelBody').innerHTML = `<div class="empty">${error.message}</div>`; return; }
+
+  $('pName').textContent = d.name;
+
+  // สร้าง signed URL อายุ 60 วินาที สำหรับแต่ละไฟล์
+  const urls = {};
+  await Promise.all(d.documents.map(async doc => {
+    const { data: s } = await sb.storage.from(BUCKET(doc.doc_type))
+      .createSignedUrl(doc.file_path, 60);
+    urls[doc.id] = s ? s.signedUrl : null;
+  }));
+
+  const canIssue = ['super_admin','depot_manager'].includes(me.role);
+
+  $('panelBody').innerHTML = `
+    <div class="box">
+      <div class="kv">
+        <div class="k">บริษัท/สังกัด</div><div>${d.company || '-'}</div>
+        <div class="k">เบอร์โทร</div><div>${d.phone}</div>
+        <div class="k">เลขบัตร (4 ตัวท้าย)</div><div>xxxx-xxxxx-${d.id_last4}</div>
+        <div class="k">คะแนนก่อน/หลัง</div>
+        <div>${d.pre_score != null ? Math.round(d.pre_score)+'%' : '-'} /
+             ${d.post_score != null ? Math.round(d.post_score)+'%' : '-'}</div>
+        <div class="k">รอบการรับรอง</div><div>ปีที่ ${d.cycle} (สอบรอบที่ ${d.round})</div>
+        <div class="k">สถานะ</div>
+        <div><span class="pill ${STATUS[d.status][1]}">${STATUS[d.status][0]}</span></div>
+        ${d.card ? `<div class="k">บัตร</div>
+          <div><b>${d.card.number}</b> · หมดอายุ ${fmt(d.card.expiry)}
+          <span class="pill ${d.card.status==='active'?'p-green':'p-red'}">${d.card.status}</span></div>` : ''}
+      </div>
+    </div>
+
+    ${d.documents.length === 0
+      ? `<div class="box"><div class="empty" style="padding:24px">ยังไม่ได้ส่งเอกสาร</div></div>`
+      : d.documents.map(doc => `
+        <div class="doc" id="doc_${doc.id}">
+          <div class="doc-head">
+            <span class="t">${DOC[doc.doc_type] || doc.doc_type}</span>
+            <span class="pill ${doc.status==='approved'?'p-green':doc.status==='rejected'?'p-red':'p-amber'}">
+              ${doc.status==='approved'?'ผ่าน':doc.status==='rejected'?'ตีกลับ':'รอตรวจ'}</span>
+          </div>
+          ${urls[doc.id]
+            ? `<img src="${urls[doc.id]}" alt="">`
+            : `<div class="empty" style="padding:30px">เปิดไฟล์ไม่ได้</div>`}
+          <div class="doc-foot">
+            <span class="exp">
+              ${doc.expiry_date ? 'หมดอายุ ' + fmt(doc.expiry_date) : ''}
+              ${doc.reject_reason ? ' · เหตุผลที่ตีกลับ: ' + doc.reject_reason : ''}
+            </span>
+            ${doc.status !== 'approved'
+              ? `<button class="btn btn-sm" data-ok="${doc.id}">ผ่าน</button>` : ''}
+            ${doc.status !== 'rejected'
+              ? `<button class="btn btn-sm btn-red" data-no="${doc.id}">ตีกลับ</button>` : ''}
+          </div>
+        </div>`).join('')}
+
+    ${d.status === 'approved' && canIssue ? `
+      <div class="box" style="text-align:center">
+        <div style="margin-bottom:12px">เอกสารผ่านครบทุกใบแล้ว</div>
+        <button class="btn" id="btnIssue" data-id="${d.id}">ออกบัตรเข้าคลัง</button>
+      </div>` : ''}
+    ${d.status === 'approved' && !canIssue ? `
+      <div class="box" style="text-align:center;color:var(--muted)">
+        เอกสารผ่านครบแล้ว รอหัวหน้าคลังออกบัตร
+      </div>` : ''}
+  `;
+
+  document.querySelectorAll('[data-ok]').forEach(b => {
+    b.onclick = () => verify(b.dataset.ok, true, null, id);
+  });
+  document.querySelectorAll('[data-no]').forEach(b => {
+    b.onclick = () => {
+      const r = prompt('เหตุผลที่ตีกลับ (คนขับจะเห็นข้อความนี้)');
+      if (r && r.trim()) verify(b.dataset.no, false, r.trim(), id);
+    };
+  });
+  const bi = $('btnIssue');
+  if (bi) bi.onclick = () => issue(bi.dataset.id);
+}
+
+async function verify(docId, approve, reason, driverId) {
+  const { error } = await sb.rpc('verify_document', {
+    p_doc_id: docId, p_approve: approve, p_reason: reason,
+  });
+  if (error) return alert(error.message);
+  await openDriver(driverId);
+  refresh();
+}
+
+async function issue(driverId) {
+  if (!confirm('ยืนยันออกบัตรเข้าคลังให้คนขับรายนี้')) return;
+  const { data, error } = await sb.rpc('issue_card', { p_driver_id: driverId });
+  if (error) return alert(error.message);
+  alert(`ออกบัตรเรียบร้อย\nเลขที่ ${data.card_number}\nหมดอายุ ${fmt(data.expiry)}`);
+  await openDriver(driverId);
+  refresh();
+}
+
+function fmt(d) {
+  if (!d) return '-';
+  const x = new Date(d);
+  return `${x.getDate()}/${x.getMonth()+1}/${x.getFullYear()+543}`;
+}
+
+// =====================================================================
+// จัดการเจ้าหน้าที่ (เฉพาะ super_admin)
+// =====================================================================
+const FN_STAFF = `${SUPABASE_URL}/functions/v1/staff-admin`;
+const ROLE_TH = {
+  super_admin:   'ผู้ดูแลระบบ',
+  depot_manager: 'หัวหน้าคลัง',
+  depot_officer: 'เจ้าหน้าที่คลัง',
+  contractor:    'ผู้รับเหมา',
+};
+
+async function callStaffFn(payload) {
+  const { data:{ session } } = await sb.auth.getSession();
+  const res = await fetch(FN_STAFF, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const out = await res.json();
+  if (!res.ok) throw new Error(out.error || 'เกิดข้อผิดพลาด');
+  return out;
+}
+
+function staffMsg(text, ok) {
+  const e = $('staffErr');
+  e.textContent = text;
+  e.className = 'err on' + (ok ? ' ok' : '');
+}
+
+function openStaff() {
+  $('staffModal').classList.add('on');
+  $('staffOverlay').classList.add('on');
+  $('staffErr').className = 'err';
+  loadStaffList();
+}
+function closeStaff() {
+  $('staffModal').classList.remove('on');
+  $('staffOverlay').classList.remove('on');
+}
+$('btnStaff').onclick = openStaff;
+$('btnStaffClose').onclick = closeStaff;
+$('staffOverlay').onclick = closeStaff;
+
+async function loadStaffList() {
+  const { data, error } = await sb.from('staff')
+    .select('id, full_name, role, is_active').order('full_name');
+
+  if (error) { $('staffList').innerHTML = `<div class="empty">${error.message}</div>`; return; }
+
+  $('staffList').innerHTML = data.map(s => `
+    <div class="srow">
+      <div class="n">
+        <b>${s.full_name}</b>
+        <span class="pill ${s.is_active ? 'p-green' : 'p-gray'}">
+          ${s.is_active ? 'ใช้งาน' : 'ปิดใช้งาน'}</span>
+        <div class="u">${ROLE_TH[s.role] || s.role}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-pw="${s.id}">เปลี่ยนรหัส</button>
+      ${s.id === me.id ? '' : `
+        <button class="btn btn-ghost btn-sm" data-act="${s.id}"
+                data-on="${s.is_active ? 1 : 0}">
+          ${s.is_active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button>`}
+    </div>`).join('');
+
+  document.querySelectorAll('[data-pw]').forEach(b => {
+    b.onclick = async () => {
+      const pw = prompt('ตั้งรหัสผ่านใหม่ (อย่างน้อย 8 ตัว)');
+      if (!pw) return;
+      try {
+        await callStaffFn({ action:'reset_password', staff_id:b.dataset.pw, password:pw });
+        staffMsg('เปลี่ยนรหัสผ่านเรียบร้อย', true);
+      } catch (e) { staffMsg(e.message); }
+    };
+  });
+
+  document.querySelectorAll('[data-act]').forEach(b => {
+    b.onclick = async () => {
+      try {
+        await callStaffFn({
+          action:'set_active', staff_id:b.dataset.act, is_active: b.dataset.on !== '1',
+        });
+        loadStaffList();
+      } catch (e) { staffMsg(e.message); }
+    };
+  });
+}
+
+$('btnStaffAdd').onclick = async () => {
+  const btn = $('btnStaffAdd');
+  btn.disabled = true;
+  try {
+    const out = await callStaffFn({
+      action:    'create',
+      username:  $('nsUser').value,
+      password:  $('nsPass').value,
+      full_name: $('nsName').value,
+      role:      $('nsRole').value,
+    });
+    staffMsg(`เพิ่มเรียบร้อย — ชื่อผู้ใช้ "${out.username}"`, true);
+    $('nsUser').value = $('nsPass').value = $('nsName').value = '';
+    loadStaffList();
+  } catch (e) {
+    staffMsg(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+boot();
+</script>
+</body>
+</html>
